@@ -1,0 +1,580 @@
+:root {
+  --page: #fff3ea;
+  --card: #ffffff;
+  --line: #dadce0;
+  --text: #202124;
+  --muted: #6b7280;
+  --accent: #efb46c;
+  --danger: #c5221f;
+  --primary: #b76700;
+  --primary-dark: #8f4f00;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--page);
+  color: var(--text);
+  font-family: Arial, "Noto Sans Thai", Tahoma, sans-serif;
+  line-height: 1.5;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.form-page {
+  min-height: 100vh;
+}
+
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  align-items: center;
+  gap: 10px;
+  min-height: 74px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid #eeeeee;
+  backdrop-filter: blur(10px);
+}
+
+.top-bar h1 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 19px;
+  font-weight: 700;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon-button,
+.send-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  cursor: pointer;
+}
+
+.icon-button {
+  border-radius: 999px;
+  background: #20a8f2;
+  color: white;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.send-button {
+  background: transparent;
+  color: #111111;
+  font-size: 29px;
+}
+
+.form-shell {
+  width: min(100% - 32px, 720px);
+  margin: 18px auto 42px;
+}
+
+.form-title,
+.question-card,
+.info-card,
+.result-card {
+  overflow: hidden;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 0 1px 1px rgba(60, 64, 67, 0.08);
+}
+
+.form-title {
+  position: relative;
+  padding: 34px 42px 24px;
+}
+
+.accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: var(--accent);
+}
+
+.form-title h2 {
+  margin: 0 0 20px;
+  font-size: clamp(32px, 6vw, 48px);
+  line-height: 1.22;
+  font-weight: 500;
+}
+
+.required-note {
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  color: var(--danger);
+  font-size: 15px;
+}
+
+.question-card,
+.info-card,
+.result-card {
+  padding: 28px 42px;
+}
+
+.question-card h3,
+.info-card h3 {
+  margin: 0 0 22px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.question-card h3 span {
+  color: var(--danger);
+}
+
+.choice-list {
+  display: grid;
+  gap: 18px;
+}
+
+.choice-list label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 28px;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.choice-list input[type="radio"] {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.error-text {
+  display: none;
+  margin: 18px 0 0;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.question-card.invalid {
+  border-color: #e58d89;
+}
+
+.question-card.invalid .error-text {
+  display: block;
+}
+
+.moment-graphic,
+.mini-moment-image,
+.steps-graphic {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #c7d2db;
+  background: #f8fbff;
+}
+
+.moment-graphic {
+  height: 330px;
+  margin-bottom: 8px;
+}
+
+.graphic-title {
+  position: absolute;
+  top: 14px;
+  left: 22px;
+  right: 22px;
+  margin: 0;
+  color: #d78328;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.patient-bed {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 330px;
+  height: 150px;
+  transform: translate(-50%, -50%);
+}
+
+.patient-bed.small {
+  width: 220px;
+  height: 100px;
+}
+
+.bed-head,
+.bed-line,
+.patient,
+.rail {
+  position: absolute;
+  display: block;
+}
+
+.bed-head {
+  left: 20px;
+  top: 24px;
+  width: 42px;
+  height: 82px;
+  border: 4px solid #9aa3ad;
+  border-radius: 6px;
+}
+
+.bed-line {
+  left: 55px;
+  top: 74px;
+  width: 245px;
+  height: 42px;
+  border: 4px solid #9aa3ad;
+  border-left: 0;
+  border-radius: 0 12px 12px 0;
+}
+
+.patient {
+  left: 92px;
+  top: 44px;
+  width: 120px;
+  height: 56px;
+  border: 4px solid #b7bec6;
+  border-radius: 50% 45% 45% 45%;
+  transform: rotate(10deg);
+}
+
+.rail {
+  left: 65px;
+  top: 116px;
+  width: 236px;
+  height: 10px;
+  border-radius: 999px;
+  background: #9aa3ad;
+}
+
+.patient-bed.small .bed-head {
+  left: 12px;
+  top: 14px;
+  width: 29px;
+  height: 56px;
+}
+
+.patient-bed.small .bed-line {
+  left: 36px;
+  top: 48px;
+  width: 165px;
+  height: 28px;
+}
+
+.patient-bed.small .patient {
+  left: 62px;
+  top: 30px;
+  width: 80px;
+  height: 38px;
+}
+
+.patient-bed.small .rail {
+  left: 43px;
+  top: 78px;
+  width: 158px;
+  height: 7px;
+}
+
+.arrow,
+.small-arrow {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  background: #f47b20;
+  color: white;
+  font-weight: 700;
+  clip-path: polygon(0 0, 82% 0, 100% 50%, 82% 100%, 0 100%, 14% 50%);
+}
+
+.arrow {
+  width: 120px;
+  height: 50px;
+  font-size: 24px;
+}
+
+.moment-one {
+  left: 62px;
+  top: 142px;
+}
+
+.moment-two {
+  left: 286px;
+  top: 92px;
+  transform: rotate(28deg);
+}
+
+.moment-three {
+  left: 118px;
+  top: 220px;
+  transform: rotate(-22deg);
+}
+
+.moment-four {
+  right: 62px;
+  top: 142px;
+}
+
+.moment-five {
+  right: 120px;
+  top: 230px;
+}
+
+.mini-moment-image {
+  height: 190px;
+  margin-bottom: 22px;
+}
+
+.small-arrow {
+  width: 70px;
+  height: 32px;
+  font-size: 16px;
+}
+
+.a1 {
+  left: 34px;
+  top: 82px;
+}
+
+.a2 {
+  left: 50%;
+  top: 38px;
+  transform: translateX(-50%) rotate(25deg);
+}
+
+.a3 {
+  left: 88px;
+  bottom: 28px;
+  transform: rotate(-19deg);
+}
+
+.a4 {
+  right: 34px;
+  top: 82px;
+}
+
+.a5 {
+  right: 86px;
+  bottom: 24px;
+}
+
+.steps-graphic {
+  min-height: 410px;
+  margin-bottom: 24px;
+  padding: 26px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.75) 0 34px, transparent 35px),
+    radial-gradient(circle at 78% 64%, rgba(255, 255, 255, 0.8) 0 58px, transparent 59px),
+    #bfe8f2;
+}
+
+.steps-graphic h4 {
+  margin: 0 0 24px;
+  color: #28a58b;
+  font-size: 36px;
+  line-height: 1.16;
+  text-align: right;
+}
+
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.step-grid span {
+  display: grid;
+  place-items: center;
+  min-height: 86px;
+  padding: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #2f766e;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 18px 0 20px;
+}
+
+.submit-button,
+.reset-button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.submit-button {
+  min-width: 104px;
+  padding: 0 28px;
+  background: var(--primary);
+  color: white;
+}
+
+.submit-button:hover {
+  background: var(--primary-dark);
+}
+
+.reset-button {
+  padding: 0 8px;
+  background: transparent;
+  color: var(--primary);
+}
+
+.result-card {
+  display: none;
+  border-color: #9ad0b8;
+  background: #f2fbf6;
+}
+
+.result-card.show {
+  display: block;
+}
+
+.result-card h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.result-card p {
+  margin: 6px 0;
+}
+
+@media (max-width: 640px) {
+  .top-bar {
+    min-height: 70px;
+    padding: 12px 14px;
+  }
+
+  .top-bar h1 {
+    font-size: 17px;
+  }
+
+  .form-shell {
+    width: calc(100% - 24px);
+    margin-top: 14px;
+  }
+
+  .form-title,
+  .question-card,
+  .info-card,
+  .result-card {
+    padding: 24px 28px;
+  }
+
+  .form-title h2 {
+    font-size: 34px;
+  }
+
+  .moment-graphic {
+    height: 240px;
+  }
+
+  .graphic-title {
+    font-size: 15px;
+  }
+
+  .patient-bed {
+    width: 230px;
+    height: 110px;
+  }
+
+  .bed-head {
+    width: 30px;
+    height: 58px;
+  }
+
+  .bed-line {
+    left: 42px;
+    top: 58px;
+    width: 174px;
+    height: 30px;
+  }
+
+  .patient {
+    left: 70px;
+    top: 38px;
+    width: 86px;
+    height: 40px;
+  }
+
+  .rail {
+    left: 48px;
+    top: 90px;
+    width: 168px;
+  }
+
+  .arrow {
+    width: 72px;
+    height: 34px;
+    font-size: 16px;
+  }
+
+  .moment-one {
+    left: 18px;
+    top: 106px;
+  }
+
+  .moment-two {
+    left: 136px;
+    top: 68px;
+  }
+
+  .moment-three {
+    left: 58px;
+    top: 164px;
+  }
+
+  .moment-four {
+    right: 18px;
+    top: 106px;
+  }
+
+  .moment-five {
+    right: 56px;
+    top: 170px;
+  }
+
+  .steps-graphic {
+    min-height: 340px;
+    padding: 20px;
+  }
+
+  .steps-graphic h4 {
+    font-size: 30px;
+  }
+
+  .step-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
