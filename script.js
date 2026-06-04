@@ -229,7 +229,7 @@ async function sendToSummary(payload) {
   const response = await fetch(SUMMARY_ENDPOINT, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "text/plain; charset=utf-8",
     },
     body: JSON.stringify(payload),
   });
@@ -294,7 +294,7 @@ form.addEventListener("submit", async (event) => {
   } catch {
     savePendingSubmission(payload);
     resultCard.dataset.sendStatus =
-      "บันทึกคำตอบแล้ว แต่เว็บสรุปยังไม่เปิด API รับข้อมูล จึงเก็บข้อมูลรอส่งไว้ในเครื่องนี้";
+      "บันทึกคำตอบแล้ว แต่ยังส่งไปเว็บสรุปไม่สำเร็จ จึงเก็บข้อมูลรอส่งไว้ในเครื่องนี้";
   }
 
   resultCard.innerHTML = buildSummary();
