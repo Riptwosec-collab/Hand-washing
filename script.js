@@ -6,6 +6,7 @@ const resultCard = document.querySelector("#resultCard");
 const backButton = document.querySelector(".icon-button");
 const fullNameInput = document.querySelector("#fullName");
 const autofillNote = document.querySelector("#autofillNote");
+const SUMMARY_ENDPOINT = "https://summary-hand.vercel.app/api/submit";
 
 const momentChoices = [
   "ล้างมือด้วยน้ำสบู่",
@@ -158,6 +159,7 @@ function validateRequiredGroups() {
 }
 
 function buildSummary() {
+  const sendStatus = resultCard.dataset.sendStatus || "";
   const momentAnswers = Array.from({ length: 5 }, (_, index) => {
     const momentNumber = index + 1;
     return `
@@ -171,7 +173,72 @@ function buildSummary() {
     <p>ชื่อ - นามสกุล: ${form.elements.fullName.value.trim()}</p>
     <p>ประเมินครั้งที่: ${getRadioValue("round")}</p>
     ${momentAnswers}
+    ${sendStatus ? `<p class="send-status">${sendStatus}</p>` : ""}
   `;
+}
+
+function buildSubmissionPayload() {
+  const fullName = form.elements.fullName.value.trim();
+  const round = Number(getRadioValue("round"));
+  const moments = Array.from({ length: 5 }, (_, index) => {
+    const momentNumber = index + 1;
+    const handwash = getRadioValue(`moment-${momentNumber}`);
+    const steps = getRadioValue(`steps-${momentNumber}`);
+
+    return {
+      moment: momentNumber,
+      handwash,
+      steps,
+      compliant: handwash !== "ไม่ล้างมือ",
+      method: handwash,
+      completeSteps: steps === "ครบ 7 ขั้นตอน",
+    };
+  });
+
+  return {
+    source: "hand-washing-form",
+    submittedAt: new Date().toISOString(),
+    name: fullName,
+    round,
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+    moments,
+    summary: {
+      momentCompliance: moments.map((item) => ({
+        moment: item.moment,
+        value: item.compliant ? 1 : 0,
+      })),
+      soapCount: moments.filter((item) => item.handwash === "ล้างมือด้วยน้ำสบู่").length,
+      alcoholCount: moments.filter((item) => item.handwash === "ล้างมือด้วย Alcohol").length,
+      noHandwashCount: moments.filter((item) => item.handwash === "ไม่ล้างมือ").length,
+      completeStepsCount: moments.filter((item) => item.completeSteps).length,
+      incompleteStepsCount: moments.filter((item) => !item.completeSteps).length,
+      totalMoments: moments.length,
+    },
+  };
+}
+
+function savePendingSubmission(payload) {
+  const key = "hand-washing-pending-submissions";
+  const current = JSON.parse(localStorage.getItem(key) || "[]");
+  current.push(payload);
+  localStorage.setItem(key, JSON.stringify(current));
+}
+
+async function sendToSummary(payload) {
+  const response = await fetch(SUMMARY_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Summary endpoint returned ${response.status}`);
+  }
+
+  return response;
 }
 
 renderMomentQuestions();
@@ -206,7 +273,7 @@ form.addEventListener("input", (event) => {
   }
 });
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   if (!validateRequiredGroups()) {
@@ -214,9 +281,23 @@ form.addEventListener("submit", (event) => {
     return;
   }
 
+  const payload = buildSubmissionPayload();
+
+  resultCard.dataset.sendStatus = "กำลังส่งข้อมูลไปยังเว็บสรุป...";
   resultCard.innerHTML = buildSummary();
   resultCard.classList.add("show");
   resultCard.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  try {
+    await sendToSummary(payload);
+    resultCard.dataset.sendStatus = "ส่งข้อมูลไปยังเว็บสรุปเรียบร้อยแล้ว";
+  } catch {
+    savePendingSubmission(payload);
+    resultCard.dataset.sendStatus =
+      "บันทึกคำตอบแล้ว แต่เว็บสรุปยังไม่เปิด API รับข้อมูล จึงเก็บข้อมูลรอส่งไว้ในเครื่องนี้";
+  }
+
+  resultCard.innerHTML = buildSummary();
 });
 
 form.addEventListener("reset", () => {
