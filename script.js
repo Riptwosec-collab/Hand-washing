@@ -235,7 +235,8 @@ async function sendToSummary(payload) {
   });
 
   if (!response.ok) {
-    throw new Error(`Summary endpoint returned ${response.status}`);
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.error || `Summary endpoint returned ${response.status}`);
   }
 
   return response;
@@ -291,10 +292,10 @@ form.addEventListener("submit", async (event) => {
   try {
     await sendToSummary(payload);
     resultCard.dataset.sendStatus = "ส่งข้อมูลไปยังเว็บสรุปเรียบร้อยแล้ว";
-  } catch {
+  } catch (error) {
     savePendingSubmission(payload);
     resultCard.dataset.sendStatus =
-      "บันทึกคำตอบแล้ว แต่ยังส่งไปเว็บสรุปไม่สำเร็จ จึงเก็บข้อมูลรอส่งไว้ในเครื่องนี้";
+      `บันทึกคำตอบแล้ว แต่ยังส่งไปเว็บสรุปไม่สำเร็จ (${error.message}) จึงเก็บข้อมูลรอส่งไว้ในเครื่องนี้`;
   }
 
   resultCard.innerHTML = buildSummary();
