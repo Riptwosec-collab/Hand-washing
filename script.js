@@ -4,12 +4,66 @@ const momentTemplate = document.querySelector("#momentTemplate");
 const stepsTemplate = document.querySelector("#stepsTemplate");
 const resultCard = document.querySelector("#resultCard");
 const backButton = document.querySelector(".icon-button");
+const fullNameInput = document.querySelector("#fullName");
+const autofillNote = document.querySelector("#autofillNote");
 
 const momentChoices = [
   "ล้างมือด้วยน้ำสบู่",
   "ล้างมือด้วย Alcohol",
   "ไม่ล้างมือ",
 ];
+
+const staffNames = [
+  "คุณอนัตยา",
+  "คุณพัชรพร",
+  "คุณพิพินา",
+  "คุณอลิน",
+  "คุณสัสรชัย",
+  "คุณนารียา",
+  "คุณนุ้ย",
+  "คุณวาวรรณ",
+  "คุณรังสินา",
+  "คุณขนิษฐา",
+  "คุณอัสรีราช",
+  "คุณวาดียา",
+  "คุณรุ่งอรัย",
+  "คุณวารีการ",
+  "คุณสุกรยา",
+  "คุณณัฐณิชา",
+  "คุณน้ำฝน",
+  "คุณวนิดา",
+  "คุณฟาริดา",
+  "คุณธัญชนก",
+  "คุณอัญชลี",
+  "คุณธนัชสิรี",
+  "คุณศิริวรรณ",
+  "คุณธากา",
+  "คุณศรีธนญา",
+  "คุณสายฯ",
+  "คุณเปี่ยลด",
+  "คุณวรากานต์",
+  "คุณอัครชัย",
+  "คุณพาณิชยา",
+  "คุณสุพัตรา",
+  "คุณเดือนเพ็ญ",
+  "คุณชุติมา",
+  "คุณลักษิกา",
+  "คุณสุพัตรา ระ",
+];
+
+function applyNameFromLink() {
+  const params = new URLSearchParams(window.location.search);
+  const nameFromLink = params.get("name") || params.get("staff");
+
+  if (!nameFromLink) return;
+
+  fullNameInput.value = nameFromLink.trim();
+  fullNameInput.readOnly = true;
+  fullNameInput.classList.add("is-autofilled");
+  autofillNote.classList.add("show");
+  backButton.setAttribute("aria-label", "กลับไปเลือกรายชื่อ");
+  backButton.dataset.staffBack = "true";
+}
 
 function createMomentQuestion(momentNumber) {
   const node = momentTemplate.content.cloneNode(true);
@@ -20,8 +74,8 @@ function createMomentQuestion(momentNumber) {
   const groupName = `moment-${momentNumber}`;
 
   card.dataset.requiredGroup = groupName;
-  card.dataset.kicker = `Moment ${momentNumber}`;
-  heading.innerHTML = `การล้างมือใน moment ที่ ${momentNumber} <span>*</span>`;
+  card.dataset.kicker = `Moment ที่ ${momentNumber}`;
+  heading.innerHTML = `การล้างมือใน moment ที่ประเมิน <span>*</span>`;
   error.textContent = `กรุณาเลือกคำตอบของ moment ที่ ${momentNumber}`;
 
   choices.innerHTML = momentChoices
@@ -48,7 +102,7 @@ function createStepsQuestion(momentNumber) {
   const groupName = `steps-${momentNumber}`;
 
   card.dataset.requiredGroup = groupName;
-  card.dataset.kicker = `ขั้นตอนการล้างมือ | Moment ${momentNumber}`;
+  card.dataset.kicker = `Moment ที่ ${momentNumber}`;
   heading.innerHTML = `ล้างมือ 7 ขั้นตอน <span>*</span>`;
   error.textContent = `กรุณาเลือกผลการล้างมือ 7 ขั้นตอนของ moment ที่ ${momentNumber}`;
 
@@ -121,8 +175,14 @@ function buildSummary() {
 }
 
 renderMomentQuestions();
+applyNameFromLink();
 
 backButton.addEventListener("click", () => {
+  if (backButton.dataset.staffBack === "true") {
+    window.location.href = "index.html";
+    return;
+  }
+
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 

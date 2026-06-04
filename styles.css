@@ -195,8 +195,8 @@ input {
 }
 
 .steps-card::before {
-  background: #f3edff;
-  color: #6842a3;
+  background: #fff0e6;
+  color: #b44600;
 }
 
 .question-card h3,
@@ -282,6 +282,25 @@ input {
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
 }
 
+.text-field input[readonly] {
+  border-color: #a7d8ce;
+  background: #edf8f5;
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+.autofill-note {
+  display: none;
+  margin: 10px 0 0;
+  color: var(--primary-dark);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.autofill-note.show {
+  display: block;
+}
+
 .error-text {
   display: none;
   margin: 16px 0 0;
@@ -330,6 +349,10 @@ input {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.steps-graphic .orange-moment-image {
+  filter: hue-rotate(165deg) saturate(1.7) brightness(1.05);
 }
 
 .moment-graphic img,

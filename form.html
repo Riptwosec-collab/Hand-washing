@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>แบบประเมินการล้างมือ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="form-page">
+      <header class="top-bar">
+        <button class="icon-button" type="button" aria-label="ย้อนกลับ">
+          <span aria-hidden="true">‹</span>
+        </button>
+        <h1>แบบประเมินการล้างมือ</h1>
+        <button class="send-button" type="submit" form="handForm" aria-label="ส่ง">
+          <span aria-hidden="true">➤</span>
+        </button>
+      </header>
+
+      <form class="form-shell" id="handForm" novalidate>
+        <section class="form-title">
+          <div class="accent"></div>
+          <p class="eyebrow">Nursing Hand Hygiene Audit</p>
+          <h2>แบบประเมินการล้างมือ</h2>
+          <p class="form-subtitle">บันทึกการปฏิบัติ 5 Moments และการล้างมือ 7 ขั้นตอน สำหรับการประเมินหน้างาน</p>
+          <p class="required-note">* ระบุว่าเป็นคำถามที่จำเป็น</p>
+        </section>
+
+        <section class="question-card name-card" data-required-text="fullName">
+          <h3>ชื่อ - นามสกุล <span>*</span></h3>
+          <label class="text-field">
+            <span>กรอกชื่อและนามสกุลผู้ประเมิน</span>
+            <input id="fullName" name="fullName" type="text" autocomplete="name" required />
+          </label>
+          <p class="autofill-note" id="autofillNote">รับชื่อจากลิงก์แล้ว</p>
+          <p class="error-text">กรุณากรอกชื่อ - นามสกุล</p>
+        </section>
+
+        <section class="question-card round-card" data-required-group="round">
+          <h3>ประเมินครั้งที่ ........(4 ครั้ง/เดือน) <span>*</span></h3>
+          <div class="choice-list">
+            <label><input type="radio" name="round" value="1" required /> 1</label>
+            <label><input type="radio" name="round" value="2" /> 2</label>
+            <label><input type="radio" name="round" value="3" /> 3</label>
+            <label><input type="radio" name="round" value="4" /> 4</label>
+          </div>
+          <p class="error-text">กรุณาเลือกครั้งที่ประเมิน</p>
+        </section>
+
+        <div id="momentSections"></div>
+
+        <div class="form-actions">
+          <button class="submit-button" type="submit">ส่ง</button>
+          <button class="reset-button" type="reset">ล้างแบบฟอร์ม</button>
+        </div>
+
+        <section class="result-card" id="resultCard" aria-live="polite"></section>
+      </form>
+    </main>
+
+    <template id="momentTemplate">
+      <section class="question-card moment-card">
+        <h3></h3>
+        <div class="mini-moment-image" aria-hidden="true">
+          <img src="five-moments-hand-hygiene.png" alt="" />
+        </div>
+        <div class="choice-list"></div>
+        <p class="error-text"></p>
+      </section>
+    </template>
+
+    <template id="stepsTemplate">
+      <section class="question-card steps-card">
+        <h3></h3>
+        <div class="steps-graphic" role="img" aria-label="ภาพประกอบ 7 ขั้นตอนล้างมือให้สะอาด">
+          <img class="orange-moment-image" src="five-moments-hand-hygiene.png" alt="ภาพโทนส้มสำหรับล้างมือ 7 ขั้นตอน" />
+        </div>
+        <div class="choice-list"></div>
+        <p class="error-text"></p>
+      </section>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
