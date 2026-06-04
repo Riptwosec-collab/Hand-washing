@@ -13,7 +13,7 @@
           <span aria-hidden="true">‹</span>
         </button>
         <h1>แบบประเมินการล้างมือ</h1>
-        <button class="send-button" type="button" aria-label="ส่ง">
+        <button class="send-button" type="submit" form="handForm" aria-label="ส่ง">
           <span aria-hidden="true">➤</span>
         </button>
       </header>
@@ -21,11 +21,22 @@
       <form class="form-shell" id="handForm" novalidate>
         <section class="form-title">
           <div class="accent"></div>
+          <p class="eyebrow">Nursing Hand Hygiene Audit</p>
           <h2>แบบประเมินการล้างมือ</h2>
+          <p class="form-subtitle">บันทึกการปฏิบัติ 5 Moments และการล้างมือ 7 ขั้นตอน สำหรับการประเมินหน้างาน</p>
           <p class="required-note">* ระบุว่าเป็นคำถามที่จำเป็น</p>
         </section>
 
-        <section class="question-card" data-required-group="round">
+        <section class="question-card name-card" data-required-text="fullName">
+          <h3>ชื่อ - นามสกุล <span>*</span></h3>
+          <label class="text-field">
+            <span>กรอกชื่อและนามสกุลผู้ประเมิน</span>
+            <input id="fullName" name="fullName" type="text" autocomplete="name" required />
+          </label>
+          <p class="error-text">กรุณากรอกชื่อ - นามสกุล</p>
+        </section>
+
+        <section class="question-card round-card" data-required-group="round">
           <h3>ประเมินครั้งที่ ........(4 ครั้ง/เดือน) <span>*</span></h3>
           <div class="choice-list">
             <label><input type="radio" name="round" value="1" required /> 1</label>
@@ -39,43 +50,11 @@
         <section class="info-card">
           <h3>ภาพอ้างอิง 5 Moments สำหรับสุขอนามัยของมือ</h3>
           <div class="moment-graphic" role="img" aria-label="ภาพประกอบ My 5 Moments for Hand Hygiene">
-            <div class="patient-bed">
-              <span class="bed-head"></span>
-              <span class="bed-line"></span>
-              <span class="patient"></span>
-              <span class="rail"></span>
-            </div>
-            <div class="arrow moment-one">1</div>
-            <div class="arrow moment-two">2</div>
-            <div class="arrow moment-three">3</div>
-            <div class="arrow moment-four">4</div>
-            <div class="arrow moment-five">5</div>
-            <p class="graphic-title">The “My 5 Moments for Hand Hygiene” Approach</p>
+            <img src="five-moments-hand-hygiene.png" alt="My 5 Moments สำหรับสุขอนามัยของมือ" />
           </div>
         </section>
 
         <div id="momentSections"></div>
-
-        <section class="question-card" data-required-group="steps">
-          <h3>ล้างมือ 7 ขั้นตอน <span>*</span></h3>
-          <div class="steps-graphic" role="img" aria-label="ภาพประกอบ 7 ขั้นตอนล้างมือให้สะอาด">
-            <h4>7 ขั้นตอน<br />ล้างมือให้สะอาด</h4>
-            <div class="step-grid">
-              <span>1<br />ฝ่ามือถูกัน</span>
-              <span>2<br />ถูหลังมือ</span>
-              <span>3<br />ซอกนิ้ว</span>
-              <span>4<br />หลังนิ้วมือ</span>
-              <span>5<br />ถูนิ้วหัวแม่มือ</span>
-              <span>6<br />ปลายนิ้ว</span>
-              <span>7<br />รอบข้อมือ</span>
-            </div>
-          </div>
-          <div class="choice-list">
-            <label><input type="radio" name="steps" value="ครบ 7 ขั้นตอน" required /> ครบ 7 ขั้นตอน</label>
-            <label><input type="radio" name="steps" value="ไม่ครบ 7 ขั้นตอน" /> ไม่ครบ 7 ขั้นตอน</label>
-          </div>
-          <p class="error-text">กรุณาเลือกผลการล้างมือ 7 ขั้นตอน</p>
-        </section>
 
         <div class="form-actions">
           <button class="submit-button" type="submit">ส่ง</button>
@@ -90,17 +69,18 @@
       <section class="question-card moment-card">
         <h3></h3>
         <div class="mini-moment-image" aria-hidden="true">
-          <div class="patient-bed small">
-            <span class="bed-head"></span>
-            <span class="bed-line"></span>
-            <span class="patient"></span>
-            <span class="rail"></span>
-          </div>
-          <div class="small-arrow a1">1</div>
-          <div class="small-arrow a2">2</div>
-          <div class="small-arrow a3">3</div>
-          <div class="small-arrow a4">4</div>
-          <div class="small-arrow a5">5</div>
+          <img src="five-moments-hand-hygiene.png" alt="" />
+        </div>
+        <div class="choice-list"></div>
+        <p class="error-text"></p>
+      </section>
+    </template>
+
+    <template id="stepsTemplate">
+      <section class="question-card steps-card">
+        <h3></h3>
+        <div class="steps-graphic" role="img" aria-label="ภาพประกอบ 7 ขั้นตอนล้างมือให้สะอาด">
+          <img src="seven-steps-handwash.png" alt="7 ขั้นตอนการล้างมือ" />
         </div>
         <div class="choice-list"></div>
         <p class="error-text"></p>
