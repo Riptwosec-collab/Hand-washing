@@ -6,7 +6,7 @@ const resultCard = document.querySelector("#resultCard");
 const backButton = document.querySelector(".icon-button");
 const fullNameInput = document.querySelector("#fullName");
 const autofillNote = document.querySelector("#autofillNote");
-const SUMMARY_ENDPOINT = "https://summary-hand.vercel.app/api/submit";
+const GOOGLE_SHEET_WEB_APP_URL = "";
 
 const momentChoices = [
   "ล้างมือด้วยน้ำสบู่",
@@ -225,8 +225,12 @@ function savePendingSubmission(payload) {
   localStorage.setItem(key, JSON.stringify(current));
 }
 
-async function sendToSummary(payload) {
-  const response = await fetch(SUMMARY_ENDPOINT, {
+async function sendToGoogleSheet(payload) {
+  if (!GOOGLE_SHEET_WEB_APP_URL) {
+    throw new Error("ยังไม่ได้ตั้งค่า Google Apps Script Web App URL");
+  }
+
+  const response = await fetch(GOOGLE_SHEET_WEB_APP_URL, {
     method: "POST",
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
@@ -290,12 +294,12 @@ form.addEventListener("submit", async (event) => {
   resultCard.scrollIntoView({ behavior: "smooth", block: "center" });
 
   try {
-    await sendToSummary(payload);
-    resultCard.dataset.sendStatus = "ส่งข้อมูลไปยังเว็บสรุปเรียบร้อยแล้ว";
+    await sendToGoogleSheet(payload);
+    resultCard.dataset.sendStatus = "ส่งข้อมูลไปยัง Google Sheet เรียบร้อยแล้ว";
   } catch (error) {
     savePendingSubmission(payload);
     resultCard.dataset.sendStatus =
-      `บันทึกคำตอบแล้ว แต่ยังส่งไปเว็บสรุปไม่สำเร็จ (${error.message}) จึงเก็บข้อมูลรอส่งไว้ในเครื่องนี้`;
+      `บันทึกคำตอบแล้ว แต่ยังส่งไป Google Sheet ไม่สำเร็จ (${error.message}) จึงเก็บข้อมูลรอส่งไว้ในเครื่องนี้`;
   }
 
   resultCard.innerHTML = buildSummary();
