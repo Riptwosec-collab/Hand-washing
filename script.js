@@ -13,6 +13,9 @@ const GOOGLE_SHEET_WEB_APP_URL =
   "https://script.google.com/macros/s/AKfycbwvOktR0boBmhoiGngJQTQL16I3c67GoUTJk2LB3kEloIZMsJQxsMEGu2Q-HyuSGBS1/exec";
 
 let currentAssessmentStatus = null;
+let activeSubmissionId = createSubmissionId();
+let isSubmitting = false;
+let hasSubmittedSuccessfully = false;
 
 const momentChoices = [
   "ล้างมือด้วยน้ำสบู่",
@@ -146,9 +149,10 @@ function createSubmissionId() {
 }
 
 function setSubmitDisabled(disabled) {
+  const shouldDisable = disabled || isSubmitting || hasSubmittedSuccessfully;
   submitButtons.forEach((button) => {
-    button.disabled = disabled;
-    button.classList.toggle("is-disabled", disabled);
+    button.disabled = shouldDisable;
+    button.classList.toggle("is-disabled", shouldDisable);
   });
 }
 
@@ -265,7 +269,7 @@ function buildSubmissionPayload() {
   });
 
   return {
-    id: createSubmissionId(),
+    id: activeSubmissionId,
     source: "hand-washing-form",
     submittedAt: new Date().toISOString(),
     name: fullName,
@@ -356,6 +360,8 @@ form.addEventListener("input", (event) => {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
+  if (isSubmitting) return;
+
   if (currentAssessmentStatus?.complete) {
     resultCard.dataset.sendStatus = "เดือนนี้ประเมินครบ 4 ครั้งแล้ว ไม่สามารถส่งเพิ่มได้";
     resultCard.dataset.savedRound = "ครบ 4 ครั้ง";
@@ -372,6 +378,8 @@ form.addEventListener("submit", async (event) => {
   }
 
   const payload = buildSubmissionPayload();
+  isSubmitting = true;
+  setSubmitDisabled(true);
 
   resultCard.dataset.sendStatus = "กำลังส่งข้อมูลไปยัง Google Sheet...";
   resultCard.dataset.savedRound = currentAssessmentStatus?.nextRound || "อัตโนมัติ";
@@ -381,18 +389,20 @@ form.addEventListener("submit", async (event) => {
   resultCard.scrollIntoView({ behavior: "smooth", block: "center" });
 
   try {
-    setSubmitDisabled(true);
     const result = await sendToGoogleSheet(payload);
     resultCard.dataset.savedRound = result.round || resultCard.dataset.savedRound;
     resultCard.dataset.savedPeriod = result.month && result.year ? `${result.month}/${result.year}` : resultCard.dataset.savedPeriod;
     resultCard.dataset.sendStatus = result.duplicate
       ? "ข้อมูลนี้เคยถูกส่งแล้ว ระบบไม่บันทึกซ้ำ"
       : "ส่งข้อมูลไปยัง Google Sheet เรียบร้อยแล้ว";
+    hasSubmittedSuccessfully = true;
     await refreshAssessmentStatus(payload.name);
+    setSubmitDisabled(true);
   } catch (error) {
     savePendingSubmission(payload);
     resultCard.dataset.sendStatus =
       `บันทึกคำตอบแล้ว แต่ยังส่งไป Google Sheet ไม่สำเร็จ (${error.message}) จึงเก็บข้อมูลรอส่งไว้ในเครื่องนี้`;
+    isSubmitting = false;
     setSubmitDisabled(false);
   }
 
@@ -407,8 +417,13 @@ form.addEventListener("reset", () => {
     resultCard.dataset.savedRound = "";
     resultCard.dataset.savedPeriod = "";
     resultCard.dataset.sendStatus = "";
+    activeSubmissionId = createSubmissionId();
+    isSubmitting = false;
+    hasSubmittedSuccessfully = false;
     if (!fullNameInput.readOnly) {
       updateRoundStatus(null);
+    } else if (!currentAssessmentStatus?.complete) {
+      setSubmitDisabled(false);
     }
   });
 });

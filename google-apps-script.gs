@@ -48,6 +48,7 @@ function onOpen() {
     .addItem("ล้างรายคนแบบพิมพ์ชื่อ", "showResetPersonPrompt")
     .addSeparator()
     .addItem("ซ่อม RawData เวลา/ครั้ง", "repairRawData")
+    .addItem("ลบรายการส่งซ้ำ", "removeDuplicateSubmissions")
     .addToUi();
 }
 
@@ -402,6 +403,58 @@ function repairRawData() {
     `ปรับปรุง ${result.updatedRows} แถว\nเติมครั้งที่ประเมิน ${result.fixedRounds} แถว\nเติมเดือน/ปี ${result.fixedPeriods} แถว\nจัดรูปแบบเวลา ${result.fixedTimes} แถว\n\nถ้าหน้าสรุปยังไม่เปลี่ยน ให้กดรีเฟรชชีต`,
     ui.ButtonSet.OK,
   );
+}
+
+function removeDuplicateSubmissions() {
+  const ui = SpreadsheetApp.getUi();
+  const confirm = ui.alert(
+    "ลบรายการส่งซ้ำ",
+    "ระบบจะลบแถวที่ชื่อเดียวกัน เดือน/ปีเดียวกัน ผลประเมินเหมือนกัน และส่งห่างกันไม่เกิน 2 นาที โดยเก็บรายการแรกไว้ ต้องการทำต่อไหม?",
+    ui.ButtonSet.YES_NO,
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  const deletedCount = removeDuplicateSubmissionRows();
+  refreshAllMonthlyHeaders();
+  ui.alert(
+    "ลบรายการส่งซ้ำเรียบร้อย",
+    `ลบรายการซ้ำ ${deletedCount} แถว\n\nถ้าหน้าสรุปยังไม่เปลี่ยน ให้กดรีเฟรชชีต`,
+    ui.ButtonSet.OK,
+  );
+}
+
+function removeDuplicateSubmissionRows() {
+  const sheet = getRawSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 3) return 0;
+
+  const values = sheet.getRange(2, 1, lastRow - 1, 16).getValues();
+  const seen = {};
+  const rowsToDelete = [];
+
+  values.forEach((row, index) => {
+    const name = normalizeName(row[0]);
+    const submittedAt = parseSubmittedAt(row[1]);
+    const month = Number(row[3]);
+    const year = Number(row[4]);
+    if (!name || !submittedAt || !month || !year) return;
+
+    const answerSignature = row.slice(5, 15).map((value) => Number(value) || 0).join("|");
+    const key = `${name}|${month}|${year}|${answerSignature}`;
+    const submittedTime = submittedAt.getTime();
+    const previous = seen[key];
+
+    if (previous && Math.abs(submittedTime - previous.submittedTime) <= 2 * 60 * 1000) {
+      rowsToDelete.push(index + 2);
+      return;
+    }
+
+    seen[key] = { submittedTime, rowNumber: index + 2 };
+  });
+
+  rowsToDelete.reverse().forEach((rowNumber) => sheet.deleteRow(rowNumber));
+  SpreadsheetApp.flush();
+  return rowsToDelete.length;
 }
 
 function repairRawDataRows() {
