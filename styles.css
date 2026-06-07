@@ -39,6 +39,12 @@ input {
   font: inherit;
 }
 
+button:disabled,
+button.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .form-page {
   min-height: 100vh;
   padding-bottom: 28px;
@@ -186,6 +192,30 @@ input {
   content: "รอบประเมิน";
   background: #fff4df;
   color: #925300;
+}
+
+.auto-round-card h3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.auto-round-card h3 span {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #e4f6f3;
+  color: var(--primary-dark);
+  font-weight: 800;
+}
+
+.round-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 .name-card::before {

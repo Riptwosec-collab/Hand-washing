@@ -37,15 +37,9 @@
           <p class="error-text">กรุณากรอกชื่อ - นามสกุล</p>
         </section>
 
-        <section class="question-card round-card" data-required-group="round">
-          <h3>ประเมินครั้งที่ ........(4 ครั้ง/เดือน) <span>*</span></h3>
-          <div class="choice-list">
-            <label><input type="radio" name="round" value="1" required /> 1</label>
-            <label><input type="radio" name="round" value="2" /> 2</label>
-            <label><input type="radio" name="round" value="3" /> 3</label>
-            <label><input type="radio" name="round" value="4" /> 4</label>
-          </div>
-          <p class="error-text">กรุณาเลือกครั้งที่ประเมิน</p>
+        <section class="question-card round-card auto-round-card" id="roundStatusCard">
+          <h3>ประเมินครั้งที่ <span id="roundStatus">ระบบจะกำหนดให้อัตโนมัติ</span></h3>
+          <p class="round-note" id="roundNote">ระบบใช้เดือน/ปีจาก Google Apps Script และเลือกครั้งที่ 1-4 ตามข้อมูลในชีต</p>
         </section>
 
         <div id="momentSections"></div>

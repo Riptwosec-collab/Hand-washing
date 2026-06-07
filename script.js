@@ -6,8 +6,13 @@ const resultCard = document.querySelector("#resultCard");
 const backButton = document.querySelector(".icon-button");
 const fullNameInput = document.querySelector("#fullName");
 const autofillNote = document.querySelector("#autofillNote");
+const roundStatus = document.querySelector("#roundStatus");
+const roundNote = document.querySelector("#roundNote");
+const submitButtons = document.querySelectorAll('button[type="submit"]');
 const GOOGLE_SHEET_WEB_APP_URL =
   "https://script.google.com/macros/s/AKfycbwvOktR0boBmhoiGngJQTQL16I3c67GoUTJk2LB3kEloIZMsJQxsMEGu2Q-HyuSGBS1/exec";
+
+let currentAssessmentStatus = null;
 
 const momentChoices = [
   "ล้างมือด้วยน้ำสบู่",
@@ -65,6 +70,7 @@ function applyNameFromLink() {
   autofillNote.classList.add("show");
   backButton.setAttribute("aria-label", "กลับไปเลือกรายชื่อ");
   backButton.dataset.staffBack = "true";
+  refreshAssessmentStatus(nameFromLink.trim());
 }
 
 function createMomentQuestion(momentNumber) {
@@ -134,6 +140,67 @@ function getRadioValue(name) {
   return checked ? checked.value : "";
 }
 
+function createSubmissionId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function setSubmitDisabled(disabled) {
+  submitButtons.forEach((button) => {
+    button.disabled = disabled;
+    button.classList.toggle("is-disabled", disabled);
+  });
+}
+
+function updateRoundStatus(status) {
+  currentAssessmentStatus = status;
+
+  if (!status) {
+    roundStatus.textContent = "ระบบจะกำหนดให้อัตโนมัติ";
+    roundNote.textContent = "ระบบใช้เดือน/ปีจาก Google Apps Script และเลือกครั้งที่ 1-4 ตามข้อมูลในชีต";
+    setSubmitDisabled(false);
+    return;
+  }
+
+  const periodText = `เดือน ${status.month}/${status.year}`;
+
+  if (status.complete) {
+    roundStatus.textContent = `ครบ 4 ครั้งแล้ว`;
+    roundNote.textContent = `${periodText} ประเมินครบแล้ว ไม่ต้องส่งเพิ่ม`;
+    setSubmitDisabled(true);
+    return;
+  }
+
+  roundStatus.textContent = `ครั้งที่ ${status.nextRound}`;
+  roundNote.textContent = `${periodText} ประเมินแล้ว ${status.completedRounds} ครั้ง เหลือ ${4 - status.completedRounds} ครั้ง`;
+  setSubmitDisabled(false);
+}
+
+async function refreshAssessmentStatus(name) {
+  if (!name || !GOOGLE_SHEET_WEB_APP_URL) {
+    updateRoundStatus(null);
+    return;
+  }
+
+  roundStatus.textContent = "กำลังตรวจครั้งที่ประเมิน...";
+  roundNote.textContent = "กำลังอ่านข้อมูลล่าสุดจาก Google Sheet";
+
+  try {
+    const url = `${GOOGLE_SHEET_WEB_APP_URL}?action=status&name=${encodeURIComponent(name)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || "อ่านสถานะไม่สำเร็จ");
+    }
+    updateRoundStatus(data);
+  } catch (error) {
+    currentAssessmentStatus = null;
+    roundStatus.textContent = "ระบบจะกำหนดให้อัตโนมัติ";
+    roundNote.textContent = "ยังอ่านสถานะจากชีตไม่ได้ แต่ตอนกดส่ง Apps Script จะตรวจซ้ำให้อีกครั้ง";
+    setSubmitDisabled(false);
+  }
+}
+
 function validateRequiredGroups() {
   const cards = [...form.querySelectorAll("[data-required-group], [data-required-text]")];
   let firstInvalid = null;
@@ -161,6 +228,8 @@ function validateRequiredGroups() {
 
 function buildSummary() {
   const sendStatus = resultCard.dataset.sendStatus || "";
+  const savedRound = resultCard.dataset.savedRound || currentAssessmentStatus?.nextRound || "-";
+  const savedPeriod = resultCard.dataset.savedPeriod || "";
   const momentAnswers = Array.from({ length: 5 }, (_, index) => {
     const momentNumber = index + 1;
     return `
@@ -172,7 +241,7 @@ function buildSummary() {
   return `
     <h3>บันทึกคำตอบเรียบร้อย</h3>
     <p>ชื่อ - นามสกุล: ${form.elements.fullName.value.trim()}</p>
-    <p>ประเมินครั้งที่: ${getRadioValue("round")}</p>
+    <p>ประเมินครั้งที่: ${savedRound}${savedPeriod ? ` (${savedPeriod})` : ""}</p>
     ${momentAnswers}
     ${sendStatus ? `<p class="send-status">${sendStatus}</p>` : ""}
   `;
@@ -180,7 +249,6 @@ function buildSummary() {
 
 function buildSubmissionPayload() {
   const fullName = form.elements.fullName.value.trim();
-  const round = Number(getRadioValue("round"));
   const moments = Array.from({ length: 5 }, (_, index) => {
     const momentNumber = index + 1;
     const handwash = getRadioValue(`moment-${momentNumber}`);
@@ -197,12 +265,10 @@ function buildSubmissionPayload() {
   });
 
   return {
+    id: createSubmissionId(),
     source: "hand-washing-form",
     submittedAt: new Date().toISOString(),
     name: fullName,
-    round,
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
     moments,
     summary: {
       momentCompliance: moments.map((item) => ({
@@ -239,12 +305,13 @@ async function sendToGoogleSheet(payload) {
     body: JSON.stringify(payload),
   });
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => null);
-    throw new Error(errorBody?.error || `Summary endpoint returned ${response.status}`);
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok || !data?.ok) {
+    throw new Error(data?.error || `Summary endpoint returned ${response.status}`);
   }
 
-  return response;
+  return data;
 }
 
 renderMomentQuestions();
@@ -277,10 +344,27 @@ form.addEventListener("input", (event) => {
   if (card && input.value.trim()) {
     card.classList.remove("invalid");
   }
+
+  if (input === fullNameInput) {
+    window.clearTimeout(input.dataset.statusTimer);
+    input.dataset.statusTimer = window.setTimeout(() => {
+      refreshAssessmentStatus(input.value.trim());
+    }, 500);
+  }
 });
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+
+  if (currentAssessmentStatus?.complete) {
+    resultCard.dataset.sendStatus = "เดือนนี้ประเมินครบ 4 ครั้งแล้ว ไม่สามารถส่งเพิ่มได้";
+    resultCard.dataset.savedRound = "ครบ 4 ครั้ง";
+    resultCard.dataset.savedPeriod = `${currentAssessmentStatus.month}/${currentAssessmentStatus.year}`;
+    resultCard.innerHTML = buildSummary();
+    resultCard.classList.add("show");
+    resultCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
 
   if (!validateRequiredGroups()) {
     resultCard.classList.remove("show");
@@ -290,17 +374,26 @@ form.addEventListener("submit", async (event) => {
   const payload = buildSubmissionPayload();
 
   resultCard.dataset.sendStatus = "กำลังส่งข้อมูลไปยังเว็บสรุป...";
+  resultCard.dataset.savedRound = currentAssessmentStatus?.nextRound || "อัตโนมัติ";
+  resultCard.dataset.savedPeriod = currentAssessmentStatus ? `${currentAssessmentStatus.month}/${currentAssessmentStatus.year}` : "";
   resultCard.innerHTML = buildSummary();
   resultCard.classList.add("show");
   resultCard.scrollIntoView({ behavior: "smooth", block: "center" });
 
   try {
-    await sendToGoogleSheet(payload);
-    resultCard.dataset.sendStatus = "ส่งข้อมูลไปยัง Google Sheet เรียบร้อยแล้ว";
+    setSubmitDisabled(true);
+    const result = await sendToGoogleSheet(payload);
+    resultCard.dataset.savedRound = result.round || resultCard.dataset.savedRound;
+    resultCard.dataset.savedPeriod = result.month && result.year ? `${result.month}/${result.year}` : resultCard.dataset.savedPeriod;
+    resultCard.dataset.sendStatus = result.duplicate
+      ? "ข้อมูลนี้เคยถูกส่งแล้ว ระบบไม่บันทึกซ้ำ"
+      : "ส่งข้อมูลไปยัง Google Sheet เรียบร้อยแล้ว";
+    await refreshAssessmentStatus(payload.name);
   } catch (error) {
     savePendingSubmission(payload);
     resultCard.dataset.sendStatus =
       `บันทึกคำตอบแล้ว แต่ยังส่งไป Google Sheet ไม่สำเร็จ (${error.message}) จึงเก็บข้อมูลรอส่งไว้ในเครื่องนี้`;
+    setSubmitDisabled(false);
   }
 
   resultCard.innerHTML = buildSummary();
@@ -311,5 +404,11 @@ form.addEventListener("reset", () => {
     form.querySelectorAll(".invalid").forEach((card) => card.classList.remove("invalid"));
     resultCard.classList.remove("show");
     resultCard.innerHTML = "";
+    resultCard.dataset.savedRound = "";
+    resultCard.dataset.savedPeriod = "";
+    resultCard.dataset.sendStatus = "";
+    if (!fullNameInput.readOnly) {
+      updateRoundStatus(null);
+    }
   });
 });
