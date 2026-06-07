@@ -6,7 +6,8 @@ const resultCard = document.querySelector("#resultCard");
 const backButton = document.querySelector(".icon-button");
 const fullNameInput = document.querySelector("#fullName");
 const autofillNote = document.querySelector("#autofillNote");
-const GOOGLE_SHEET_WEB_APP_URL = "";
+const GOOGLE_SHEET_WEB_APP_URL =
+  "https://script.google.com/macros/s/AKfycbwvOktR0boBmhoiGngJQTQL16I3c67GoUTJk2LB3kEloIZMsJQxsMEGu2Q-HyuSGBS1/exec";
 
 const momentChoices = [
   "ล้างมือด้วยน้ำสบู่",
