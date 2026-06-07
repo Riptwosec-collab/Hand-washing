@@ -1,6 +1,7 @@
 const SPREADSHEET_ID = "1EqkZXESlWdKzPfCg77cIXvYHLlktRUxGz9w2sk1NjiM";
 const RAW_SHEET_NAME = "RawData";
 const MAX_ROUNDS_PER_MONTH = 4;
+const MONTH_SHEET_NAMES = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 
 const STAFF_NAMES = [
   "คุณอนัตยา",
@@ -45,6 +46,8 @@ function onOpen() {
     .createMenu("จัดการแบบประเมิน")
     .addItem("ล้างรายคนเป็นครั้งที่ 0", "showResetPersonDialog")
     .addItem("ล้างรายคนแบบพิมพ์ชื่อ", "showResetPersonPrompt")
+    .addSeparator()
+    .addItem("ซ่อม RawData เวลา/ครั้ง", "repairRawData")
     .addToUi();
 }
 
@@ -103,6 +106,8 @@ function doPost(e) {
       incompleteCount,
       submission.id,
     ]);
+    sheet.getRange(sheet.getLastRow(), 2).setNumberFormat("yyyy-mm-dd hh:mm:ss");
+    updateMonthlyHeader(submission.month, submission.year);
 
     return jsonOutput({
       ok: true,
@@ -277,7 +282,8 @@ function showResetPersonPrompt() {
 function normalizeSubmission(payload) {
   const name = String(payload.name || "").trim();
   const moments = Array.isArray(payload.moments) ? payload.moments : [];
-  const period = getServerPeriod();
+  const submittedAt = new Date();
+  const period = getServerPeriod(submittedAt);
 
   if (!name) throw new Error("Missing name");
   if (moments.length !== 5) throw new Error("Invalid moments");
@@ -285,16 +291,16 @@ function normalizeSubmission(payload) {
   return {
     id: String(payload.id || Utilities.getUuid()),
     name,
-    submittedAt: new Date().toISOString(),
+    submittedAt,
     month: period.month,
     year: period.year,
     moments,
   };
 }
 
-function getServerPeriod() {
+function getServerPeriod(dateValue) {
   const timezone = Session.getScriptTimeZone() || "Asia/Bangkok";
-  const now = new Date();
+  const now = dateValue || new Date();
   return {
     month: Number(Utilities.formatDate(now, timezone, "M")),
     year: Number(Utilities.formatDate(now, timezone, "yyyy")),
@@ -378,6 +384,151 @@ function countPersonAssessments(name, month, year) {
     const rowYear = Number(row[4]);
     return rowName === targetName && rowMonth === month && rowYear === year;
   }).length;
+}
+
+function repairRawData() {
+  const ui = SpreadsheetApp.getUi();
+  const confirm = ui.alert(
+    "ซ่อม RawData เวลา/ครั้ง",
+    "ระบบจะเติมครั้งที่ประเมิน เดือน ปี ที่ว่าง และจัดรูปแบบเวลาส่งเป็นเวลาไทย ต้องการทำต่อไหม?",
+    ui.ButtonSet.YES_NO,
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  const result = repairRawDataRows();
+  refreshAllMonthlyHeaders();
+  ui.alert(
+    "ซ่อม RawData เรียบร้อย",
+    `ปรับปรุง ${result.updatedRows} แถว\nเติมครั้งที่ประเมิน ${result.fixedRounds} แถว\nเติมเดือน/ปี ${result.fixedPeriods} แถว\nจัดรูปแบบเวลา ${result.fixedTimes} แถว\n\nถ้าหน้าสรุปยังไม่เปลี่ยน ให้กดรีเฟรชชีต`,
+    ui.ButtonSet.OK,
+  );
+}
+
+function repairRawDataRows() {
+  const sheet = getRawSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return { updatedRows: 0, fixedRounds: 0, fixedPeriods: 0, fixedTimes: 0 };
+  }
+
+  const range = sheet.getRange(2, 1, lastRow - 1, 16);
+  const values = range.getValues();
+  const usedRoundsByKey = {};
+  let updatedRows = 0;
+  let fixedRounds = 0;
+  let fixedPeriods = 0;
+  let fixedTimes = 0;
+
+  values.forEach((row) => {
+    const name = normalizeName(row[0]);
+    const submittedAt = parseSubmittedAt(row[1]) || new Date();
+    const period = getServerPeriod(submittedAt);
+    const month = Number(row[3]) || period.month;
+    const year = Number(row[4]) || period.year;
+    const key = `${name}|${month}|${year}`;
+
+    if (!usedRoundsByKey[key]) usedRoundsByKey[key] = new Set();
+    const rowRound = Number(row[2]);
+    if (rowRound >= 1 && rowRound <= MAX_ROUNDS_PER_MONTH) {
+      usedRoundsByKey[key].add(rowRound);
+    }
+  });
+
+  values.forEach((row) => {
+    let rowChanged = false;
+    const name = normalizeName(row[0]);
+    const submittedAt = parseSubmittedAt(row[1]) || new Date();
+    const period = getServerPeriod(submittedAt);
+
+    if (!(row[1] instanceof Date)) {
+      row[1] = submittedAt;
+      rowChanged = true;
+      fixedTimes += 1;
+    }
+
+    if (!Number(row[3]) || !Number(row[4])) {
+      row[3] = Number(row[3]) || period.month;
+      row[4] = Number(row[4]) || period.year;
+      rowChanged = true;
+      fixedPeriods += 1;
+    }
+
+    const month = Number(row[3]);
+    const year = Number(row[4]);
+    const key = `${name}|${month}|${year}`;
+    if (!usedRoundsByKey[key]) usedRoundsByKey[key] = new Set();
+
+    const rowRound = Number(row[2]);
+    if (!rowRound && name) {
+      const nextRound = nextAvailableRound(usedRoundsByKey[key]);
+      row[2] = nextRound;
+      usedRoundsByKey[key].add(nextRound);
+      rowChanged = true;
+      fixedRounds += 1;
+    }
+
+    if (rowChanged) updatedRows += 1;
+  });
+
+  range.setValues(values);
+  sheet.getRange(2, 2, lastRow - 1, 1).setNumberFormat("yyyy-mm-dd hh:mm:ss");
+  SpreadsheetApp.flush();
+
+  return { updatedRows, fixedRounds, fixedPeriods, fixedTimes };
+}
+
+function refreshAllMonthlyHeaders() {
+  const period = getServerPeriod();
+  for (let month = 1; month <= 12; month += 1) {
+    updateMonthlyHeader(month, period.year);
+  }
+}
+
+function updateMonthlyHeader(month, year) {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const monthSheet = spreadsheet.getSheetByName(MONTH_SHEET_NAMES[month - 1]);
+  const rawSheet = spreadsheet.getSheetByName(RAW_SHEET_NAME);
+  if (!monthSheet || !rawSheet) return;
+
+  const lastRow = rawSheet.getLastRow();
+  if (lastRow < 2) {
+    monthSheet.getRange("A2").setValue("เดือนนี้ 0 คน. | รายการที่ส่งมา 0 รายการ");
+    return;
+  }
+
+  const values = rawSheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  const names = new Set();
+  let submissionCount = 0;
+
+  values.forEach((row) => {
+    const name = String(row[0] || "").trim();
+    const rowMonth = Number(row[3]);
+    const rowYear = Number(row[4]);
+
+    if (name && rowMonth === month && rowYear === year) {
+      names.add(normalizeName(name));
+      submissionCount += 1;
+    }
+  });
+
+  monthSheet.getRange("A2").setValue(`เดือนนี้ ${names.size} คน. | รายการที่ส่งมา ${submissionCount} รายการ`);
+}
+
+function nextAvailableRound(usedRounds) {
+  for (let round = 1; round <= MAX_ROUNDS_PER_MONTH; round += 1) {
+    if (!usedRounds.has(round)) return round;
+  }
+  return MAX_ROUNDS_PER_MONTH;
+}
+
+function parseSubmittedAt(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (!value) return null;
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) return parsed;
+
+  return null;
 }
 
 function normalizeName(value) {
