@@ -308,7 +308,7 @@ async function sendToGoogleSheet(payload) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok || !data?.ok) {
-    throw new Error(data?.error || `Summary endpoint returned ${response.status}`);
+    throw new Error(data?.error || `Google Sheet endpoint returned ${response.status}`);
   }
 
   return data;
@@ -373,7 +373,7 @@ form.addEventListener("submit", async (event) => {
 
   const payload = buildSubmissionPayload();
 
-  resultCard.dataset.sendStatus = "กำลังส่งข้อมูลไปยังเว็บสรุป...";
+  resultCard.dataset.sendStatus = "กำลังส่งข้อมูลไปยัง Google Sheet...";
   resultCard.dataset.savedRound = currentAssessmentStatus?.nextRound || "อัตโนมัติ";
   resultCard.dataset.savedPeriod = currentAssessmentStatus ? `${currentAssessmentStatus.month}/${currentAssessmentStatus.year}` : "";
   resultCard.innerHTML = buildSummary();
