@@ -4,10 +4,10 @@ const MAX_ROUNDS_PER_MONTH = 4;
 const MONTH_SHEET_NAMES = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 
 const STAFF_NAMES = [
-  "คุณอณัศยา",
+  "คุณอนัตยา",
   "คุณพัชรินทร์",
-  "คุณทิพนิภา",
-  "คคุณอลิน",
+  "คุณทิพนิกา",
+  "คุณอลิน",
   "คุณภัสธารีย์",
   "คุณมาริษา",
   "คุณอัจฉราภรณ์",
@@ -20,7 +20,7 @@ const STAFF_NAMES = [
   "คุณบูร์ชัยนี",
   "คุณจิตาภา",
   "คุณสุทธยา",
-  "คุณณัฐณิขา",
+  "คุณณัฐณิชา",
   "คุณน้ำฝน",
   "คุณวนิดา",
   "คุณฟารีดาห์",
@@ -39,7 +39,7 @@ const STAFF_NAMES = [
   "คุณเดือนเพ็ญ",
   "คุณชุติมา",
   "คุณลักษิกา",
-  "คุณสุพัคตรา ระ",
+  "คุณสุพัตรา ระ",
 ];
 
 function onOpen() {
@@ -233,7 +233,7 @@ function resetSelectedPerson(payload) {
 function showResetPersonPrompt() {
   const ui = SpreadsheetApp.getUi();
   const period = getServerPeriod();
-  const nameResponse = ui.prompt("ล้างการประเมินรายคน", "พิมพ์ชื่อให้ตรงกับในชีต เช่น คุณอณัศยา", ui.ButtonSet.OK_CANCEL);
+  const nameResponse = ui.prompt("ล้างการประเมินรายคน", "พิมพ์ชื่อให้ตรงกับในชีต เช่น คุณอนัตยา", ui.ButtonSet.OK_CANCEL);
   if (nameResponse.getSelectedButton() !== ui.Button.OK) return;
 
   const name = nameResponse.getResponseText().trim();
@@ -480,19 +480,25 @@ function syncStaffNamesToMonthlySheets() {
 function syncStaffNamesToMonthlySheetRows() {
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
   const startRow = 4;
-  const nameColumn = 1;
+  const indexColumn = 1;
+  const nameColumn = 2;
   let updatedSheets = 0;
 
   MONTH_SHEET_NAMES.forEach((sheetName) => {
     const sheet = spreadsheet.getSheetByName(sheetName);
     if (!sheet) return;
 
-    const requiredRows = STAFF_NAMES.length;
-    const lastRow = Math.max(sheet.getLastRow(), startRow + requiredRows - 1);
+    const totalRow = startRow + STAFF_NAMES.length;
+    const requiredRows = STAFF_NAMES.length + 1;
+    const lastRow = Math.max(sheet.getLastRow(), totalRow);
     const rowsToClear = Math.max(lastRow - startRow + 1, requiredRows);
 
+    sheet.getRange(startRow, indexColumn, rowsToClear, 1).clearContent();
     sheet.getRange(startRow, nameColumn, rowsToClear, 1).clearContent();
-    sheet.getRange(startRow, nameColumn, requiredRows, 1).setValues(STAFF_NAMES.map((name) => [name]));
+    sheet.getRange(startRow, indexColumn, STAFF_NAMES.length, 1).setValues(STAFF_NAMES.map((_, index) => [index + 1]));
+    sheet.getRange(startRow, nameColumn, STAFF_NAMES.length, 1).setValues(STAFF_NAMES.map((name) => [name]));
+    sheet.getRange(totalRow, indexColumn).setValue(STAFF_NAMES.length + 1);
+    sheet.getRange(totalRow, nameColumn).setValue("Total");
     updatedSheets += 1;
   });
 
