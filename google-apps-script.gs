@@ -4,41 +4,42 @@ const MAX_ROUNDS_PER_MONTH = 4;
 const MONTH_SHEET_NAMES = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 
 const STAFF_NAMES = [
-  "คุณอนัตยา",
-  "คุณพัชรพร",
-  "คุณพิพินา",
-  "คุณอลิน",
-  "คุณสัสรชัย",
-  "คุณนารียา",
-  "คุณนุ้ย",
-  "คุณวาวรรณ",
-  "คุณรังสินา",
+  "คุณอณัศยา",
+  "คุณพัชรินทร์",
+  "คุณทิพนิภา",
+  "คคุณอลิน",
+  "คุณภัสธารีย์",
+  "คุณมาริษา",
+  "คุณอัจฉราภรณ์",
+  "คุณณัฐ",
+  "คุณจุฑาวรรณ",
+  "คุณรังสิมา",
   "คุณขนิษฐา",
-  "คุณอัสรีราช",
-  "คุณวาดียา",
-  "คุณรุ่งอรัย",
-  "คุณวารีการ",
-  "คุณสุกรยา",
-  "คุณณัฐณิชา",
+  "คุณชอบีเราะห์",
+  "คุณวงศิยา",
+  "คุณบูร์ชัยนี",
+  "คุณจิตาภา",
+  "คุณสุทธยา",
+  "คุณณัฐณิขา",
   "คุณน้ำฝน",
   "คุณวนิดา",
-  "คุณฟาริดา",
+  "คุณฟารีดาห์",
   "คุณธัญชนก",
-  "คุณอัญชลี",
-  "คุณธนัชสิรี",
+  "คุณธัญภรณ์",
+  "คุณจิติมา",
+  "คุณรัชขสิทธิ์",
   "คุณศิริวรรณ",
-  "คุณธากา",
-  "คุณศรีธนญา",
-  "คุณสายฯ",
-  "คุณเปี่ยลด",
-  "คุณวรากานต์",
-  "คุณอัครชัย",
-  "คุณพาณิชยา",
+  "คุณิตาภา",
+  "คุณศรีกัญญา",
+  "คุณเฟืองลดา",
+  "คุณวรกานต์",
+  "คุณอัตรชัย",
+  "คุณพานิชดา",
   "คุณสุพัตรา",
   "คุณเดือนเพ็ญ",
   "คุณชุติมา",
   "คุณลักษิกา",
-  "คุณสุพัตรา ระ",
+  "คุณสุพัคตรา ระ",
 ];
 
 function onOpen() {
@@ -47,6 +48,7 @@ function onOpen() {
     .addItem("ล้างรายคนเป็นครั้งที่ 0", "showResetPersonDialog")
     .addItem("ล้างรายคนแบบพิมพ์ชื่อ", "showResetPersonPrompt")
     .addSeparator()
+    .addItem("อัปเดตรายชื่อทุกเดือน", "syncStaffNamesToMonthlySheets")
     .addItem("ซ่อม RawData เวลา/ครั้ง", "repairRawData")
     .addItem("ลบรายการส่งซ้ำ", "removeDuplicateSubmissions")
     .addToUi();
@@ -231,7 +233,7 @@ function resetSelectedPerson(payload) {
 function showResetPersonPrompt() {
   const ui = SpreadsheetApp.getUi();
   const period = getServerPeriod();
-  const nameResponse = ui.prompt("ล้างการประเมินรายคน", "พิมพ์ชื่อให้ตรงกับในชีต เช่น คุณอนัตยา", ui.ButtonSet.OK_CANCEL);
+  const nameResponse = ui.prompt("ล้างการประเมินรายคน", "พิมพ์ชื่อให้ตรงกับในชีต เช่น คุณอณัศยา", ui.ButtonSet.OK_CANCEL);
   if (nameResponse.getSelectedButton() !== ui.Button.OK) return;
 
   const name = nameResponse.getResponseText().trim();
@@ -455,6 +457,47 @@ function removeDuplicateSubmissionRows() {
   rowsToDelete.reverse().forEach((rowNumber) => sheet.deleteRow(rowNumber));
   SpreadsheetApp.flush();
   return rowsToDelete.length;
+}
+
+function syncStaffNamesToMonthlySheets() {
+  const ui = SpreadsheetApp.getUi();
+  const confirm = ui.alert(
+    "อัปเดตรายชื่อทุกเดือน",
+    "ระบบจะเขียนรายชื่อชุดใหม่ลงแท็บ ม.ค.-ธ.ค. ในคอลัมน์รายชื่อ และล้างชื่อส่วนเกินเดิม ต้องการทำต่อไหม?",
+    ui.ButtonSet.YES_NO,
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  const updatedSheets = syncStaffNamesToMonthlySheetRows();
+  refreshAllMonthlyHeaders();
+  ui.alert(
+    "อัปเดตรายชื่อเรียบร้อย",
+    `อัปเดต ${updatedSheets} เดือนแล้ว\n\nถ้าหน้าชีตยังไม่เปลี่ยน ให้กดรีเฟรชชีต 1 ครั้ง`,
+    ui.ButtonSet.OK,
+  );
+}
+
+function syncStaffNamesToMonthlySheetRows() {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const startRow = 4;
+  const nameColumn = 1;
+  let updatedSheets = 0;
+
+  MONTH_SHEET_NAMES.forEach((sheetName) => {
+    const sheet = spreadsheet.getSheetByName(sheetName);
+    if (!sheet) return;
+
+    const requiredRows = STAFF_NAMES.length;
+    const lastRow = Math.max(sheet.getLastRow(), startRow + requiredRows - 1);
+    const rowsToClear = Math.max(lastRow - startRow + 1, requiredRows);
+
+    sheet.getRange(startRow, nameColumn, rowsToClear, 1).clearContent();
+    sheet.getRange(startRow, nameColumn, requiredRows, 1).setValues(STAFF_NAMES.map((name) => [name]));
+    updatedSheets += 1;
+  });
+
+  SpreadsheetApp.flush();
+  return updatedSheets;
 }
 
 function repairRawDataRows() {
