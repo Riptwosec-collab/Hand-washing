@@ -157,27 +157,47 @@ function setSubmitDisabled(disabled) {
   });
 }
 
-function updateRoundStatus(status) {
-  currentAssessmentStatus = status;
+function isValidAssessmentStatus(status) {
+  return Boolean(
+    status &&
+      Number.isInteger(Number(status.month)) &&
+      Number.isInteger(Number(status.year)) &&
+      Number.isInteger(Number(status.nextRound)) &&
+      Number.isInteger(Number(status.completedRounds)),
+  );
+}
 
-  if (!status) {
+function updateRoundStatus(status) {
+  currentAssessmentStatus = isValidAssessmentStatus(status)
+    ? {
+        ...status,
+        month: Number(status.month),
+        year: Number(status.year),
+        nextRound: Number(status.nextRound),
+        completedRounds: Number(status.completedRounds),
+        complete: Boolean(status.complete),
+      }
+    : null;
+
+  if (!currentAssessmentStatus) {
     roundStatus.textContent = "ระบบจะกำหนดให้อัตโนมัติ";
     roundNote.textContent = "ระบบใช้เดือน/ปีจาก Google Apps Script และเลือกครั้งที่ 1-4 ตามข้อมูลในชีต";
     setSubmitDisabled(false);
     return;
   }
 
-  const periodText = `เดือน ${status.month}/${status.year}`;
+  const periodText = `เดือน ${currentAssessmentStatus.month}/${currentAssessmentStatus.year}`;
 
-  if (status.complete) {
+  if (currentAssessmentStatus.complete) {
     roundStatus.textContent = `ครบ 4 ครั้งแล้ว`;
     roundNote.textContent = `${periodText} ประเมินครบแล้ว ไม่ต้องส่งเพิ่ม`;
     setSubmitDisabled(true);
     return;
   }
 
-  roundStatus.textContent = `ครั้งที่ ${status.nextRound}`;
-  roundNote.textContent = `${periodText} ประเมินแล้ว ${status.completedRounds} ครั้ง เหลือ ${4 - status.completedRounds} ครั้ง`;
+  const remainingRounds = Math.max(0, 4 - currentAssessmentStatus.completedRounds);
+  roundStatus.textContent = `ครั้งที่ ${currentAssessmentStatus.nextRound}`;
+  roundNote.textContent = `${periodText} ประเมินแล้ว ${currentAssessmentStatus.completedRounds} ครั้ง เหลือ ${remainingRounds} ครั้ง`;
   setSubmitDisabled(false);
 }
 
@@ -196,6 +216,9 @@ async function refreshAssessmentStatus(name) {
     const data = await response.json();
     if (!response.ok || !data.ok) {
       throw new Error(data.error || "อ่านสถานะไม่สำเร็จ");
+    }
+    if (!isValidAssessmentStatus(data)) {
+      throw new Error("ข้อมูลสถานะไม่ครบ");
     }
     updateRoundStatus(data);
   } catch (error) {
@@ -233,7 +256,7 @@ function validateRequiredGroups() {
 
 function buildSummary() {
   const sendStatus = resultCard.dataset.sendStatus || "";
-  const savedRound = resultCard.dataset.savedRound || currentAssessmentStatus?.nextRound || "-";
+  const savedRound = resultCard.dataset.savedRound || (isValidAssessmentStatus(currentAssessmentStatus) ? currentAssessmentStatus.nextRound : "-");
   const savedPeriod = resultCard.dataset.savedPeriod || "";
   const momentAnswers = Array.from({ length: 5 }, (_, index) => {
     const momentNumber = index + 1;
@@ -383,8 +406,10 @@ form.addEventListener("submit", async (event) => {
   setSubmitDisabled(true);
 
   resultCard.dataset.sendStatus = "กำลังส่งข้อมูลไปยัง Google Sheet...";
-  resultCard.dataset.savedRound = currentAssessmentStatus?.nextRound || "อัตโนมัติ";
-  resultCard.dataset.savedPeriod = currentAssessmentStatus ? `${currentAssessmentStatus.month}/${currentAssessmentStatus.year}` : "";
+  resultCard.dataset.savedRound = isValidAssessmentStatus(currentAssessmentStatus) ? currentAssessmentStatus.nextRound : "อัตโนมัติ";
+  resultCard.dataset.savedPeriod = isValidAssessmentStatus(currentAssessmentStatus)
+    ? `${currentAssessmentStatus.month}/${currentAssessmentStatus.year}`
+    : "";
   resultCard.innerHTML = buildSummary();
   resultCard.classList.add("show");
   resultCard.scrollIntoView({ behavior: "smooth", block: "center" });
