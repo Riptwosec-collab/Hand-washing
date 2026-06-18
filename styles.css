@@ -219,9 +219,15 @@ button.is-disabled {
 }
 
 .name-card::before {
-  content: "ข้อมูลผู้ประเมิน";
+  content: "ข้อมูลผู้ถูกประเมิน";
   background: #e9f7ef;
   color: #17643b;
+}
+
+.evaluator-card::before {
+  content: "ข้อมูลผู้ประเมิน";
+  background: #eef6ff;
+  color: #1b5e8f;
 }
 
 .steps-card::before {

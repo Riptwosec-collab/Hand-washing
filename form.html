@@ -27,14 +27,24 @@
           <p class="required-note">* ระบุว่าเป็นคำถามที่จำเป็น</p>
         </section>
 
-        <section class="question-card name-card" data-required-text="fullName">
-          <h3>ชื่อ - นามสกุล <span>*</span></h3>
+        <section class="question-card evaluator-card" data-required-text="evaluatorName">
+          <h3>ชื่อผู้ประเมิน <span>*</span></h3>
           <label class="text-field">
-            <span>กรอกชื่อและนามสกุลผู้ประเมิน</span>
+            <span>ชื่อและนามสกุลผู้ประเมิน</span>
+            <input id="evaluatorName" name="evaluatorName" type="text" autocomplete="name" required />
+          </label>
+          <p class="autofill-note" id="evaluatorAutofillNote">รับชื่อผู้ประเมินจากลิงก์แล้ว</p>
+          <p class="error-text">กรุณาเลือกชื่อผู้ประเมิน</p>
+        </section>
+
+        <section class="question-card name-card" data-required-text="fullName">
+          <h3>ชื่อผู้ถูกประเมิน <span>*</span></h3>
+          <label class="text-field">
+            <span>ชื่อและนามสกุลผู้ถูกประเมิน</span>
             <input id="fullName" name="fullName" type="text" autocomplete="name" required />
           </label>
-          <p class="autofill-note" id="autofillNote">รับชื่อจากลิงก์แล้ว</p>
-          <p class="error-text">กรุณากรอกชื่อ - นามสกุล</p>
+          <p class="autofill-note" id="autofillNote">รับชื่อผู้ถูกประเมินจากลิงก์แล้ว</p>
+          <p class="error-text">กรุณาเลือกชื่อผู้ถูกประเมิน</p>
         </section>
 
         <section class="question-card round-card auto-round-card" id="roundStatusCard">

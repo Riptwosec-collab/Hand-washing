@@ -108,6 +108,7 @@ function doPost(e) {
       completeCount,
       incompleteCount,
       submission.id,
+      submission.evaluator,
     ]);
     sheet.getRange(sheet.getLastRow(), 2).setNumberFormat("yyyy-mm-dd hh:mm:ss");
     updateMonthlyHeader(submission.month, submission.year);
@@ -283,16 +284,19 @@ function showResetPersonPrompt() {
 }
 
 function normalizeSubmission(payload) {
+  const evaluator = String(payload.evaluator || payload.evaluatorName || "").trim();
   const name = String(payload.name || "").trim();
   const moments = Array.isArray(payload.moments) ? payload.moments : [];
   const submittedAt = new Date();
   const period = getServerPeriod(submittedAt);
 
+  if (!evaluator) throw new Error("Missing evaluator");
   if (!name) throw new Error("Missing name");
   if (moments.length !== 5) throw new Error("Invalid moments");
 
   return {
     id: String(payload.id || Utilities.getUuid()),
+    evaluator,
     name,
     submittedAt,
     month: period.month,

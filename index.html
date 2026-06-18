@@ -16,7 +16,45 @@
         gap: 10px;
       }
 
+      .staff-step {
+        display: none;
+      }
+
+      .staff-step.is-active {
+        display: block;
+      }
+
+      .selected-person {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        border: 1px solid #bfe1dc;
+        border-radius: 8px;
+        background: #edf8f5;
+        color: var(--primary-dark);
+        font-weight: 700;
+      }
+
+      .selected-person.show {
+        display: flex;
+      }
+
+      .selected-person button {
+        min-height: 36px;
+        padding: 0 12px;
+        border: 1px solid #94c8c0;
+        border-radius: 8px;
+        background: #ffffff;
+        color: var(--primary-dark);
+        cursor: pointer;
+        font-weight: 700;
+      }
+
       .staff-link {
+        width: 100%;
         display: flex;
         align-items: center;
         min-height: 54px;
@@ -27,8 +65,11 @@
         color: var(--primary-dark);
         font-size: 17px;
         font-weight: 700;
+        font-family: inherit;
+        text-align: left;
         text-decoration: none;
         box-shadow: 0 8px 18px rgba(28, 61, 55, 0.08);
+        cursor: pointer;
       }
 
       .staff-link:hover {
@@ -43,11 +84,22 @@
         <div class="accent"></div>
         <p class="eyebrow">Staff Links</p>
         <h2>ลิงก์แบบประเมินรายชื่อ</h2>
-        <p class="form-subtitle">กดชื่อเพื่อเปิดแบบประเมินพร้อมเติมชื่ออัตโนมัติ หากกดผิดให้กดปุ่มย้อนกลับบนแบบฟอร์ม</p>
+        <p class="form-subtitle">เลือกชื่อผู้ประเมินก่อน แล้วเลือกชื่อผู้ถูกประเมิน ระบบจะเติมชื่อทั้งสองช่องให้อัตโนมัติ</p>
       </section>
 
       <section class="question-card">
-        <div class="staff-list" id="staffList"></div>
+        <div class="selected-person" id="selectedPerson">
+          <span id="selectedPersonText"></span>
+          <button type="button" id="changeEvaluatorButton">เปลี่ยนผู้ประเมิน</button>
+        </div>
+        <div class="staff-step is-active" id="evaluatorStep">
+          <p class="eyebrow">1. เลือกผู้ประเมิน</p>
+          <div class="staff-list" id="evaluatorList"></div>
+        </div>
+        <div class="staff-step" id="assessedStep">
+          <p class="eyebrow">2. เลือกผู้ถูกประเมิน</p>
+          <div class="staff-list" id="assessedList"></div>
+        </div>
       </section>
     </main>
 
@@ -91,14 +143,59 @@
         "คุณสุพัตรา ระย้า",
       ];
 
-      const staffList = document.querySelector("#staffList");
+      const evaluatorStep = document.querySelector("#evaluatorStep");
+      const assessedStep = document.querySelector("#assessedStep");
+      const evaluatorList = document.querySelector("#evaluatorList");
+      const assessedList = document.querySelector("#assessedList");
+      const selectedPerson = document.querySelector("#selectedPerson");
+      const selectedPersonText = document.querySelector("#selectedPersonText");
+      const changeEvaluatorButton = document.querySelector("#changeEvaluatorButton");
+      let selectedEvaluator = "";
 
-      staffList.innerHTML = staffNames
+      function showEvaluatorStep() {
+        selectedEvaluator = "";
+        selectedPerson.classList.remove("show");
+        evaluatorStep.classList.add("is-active");
+        assessedStep.classList.remove("is-active");
+      }
+
+      function showAssessedStep(name) {
+        selectedEvaluator = name;
+        selectedPersonText.textContent = `ผู้ประเมิน: ${name}`;
+        assessedList.querySelectorAll("[data-name]").forEach((link) => {
+          link.href = `form.html?evaluator=${encodeURIComponent(selectedEvaluator)}&name=${encodeURIComponent(link.dataset.name)}`;
+        });
+        selectedPerson.classList.add("show");
+        evaluatorStep.classList.remove("is-active");
+        assessedStep.classList.add("is-active");
+      }
+
+      evaluatorList.innerHTML = staffNames
         .map((name) => {
-          const url = `form.html?name=${encodeURIComponent(name)}`;
-          return `<a class="staff-link" href="${url}">${name}</a>`;
+          return `<button class="staff-link" type="button" data-evaluator="${name}">${name}</button>`;
         })
         .join("");
+
+      assessedList.innerHTML = staffNames
+        .map((name) => {
+          const url = `form.html?evaluator=${encodeURIComponent(selectedEvaluator)}&name=${encodeURIComponent(name)}`;
+          return `<a class="staff-link" data-name="${name}" href="${url}">${name}</a>`;
+        })
+        .join("");
+
+      evaluatorList.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-evaluator]");
+        if (!button) return;
+        showAssessedStep(button.dataset.evaluator);
+      });
+
+      assessedList.addEventListener("click", (event) => {
+        const link = event.target.closest("[data-name]");
+        if (!link) return;
+        link.href = `form.html?evaluator=${encodeURIComponent(selectedEvaluator)}&name=${encodeURIComponent(link.dataset.name)}`;
+      });
+
+      changeEvaluatorButton.addEventListener("click", showEvaluatorStep);
     </script>
   </body>
 </html>

@@ -4,6 +4,8 @@ const momentTemplate = document.querySelector("#momentTemplate");
 const stepsTemplate = document.querySelector("#stepsTemplate");
 const resultCard = document.querySelector("#resultCard");
 const backButton = document.querySelector(".icon-button");
+const evaluatorNameInput = document.querySelector("#evaluatorName");
+const evaluatorAutofillNote = document.querySelector("#evaluatorAutofillNote");
 const fullNameInput = document.querySelector("#fullName");
 const autofillNote = document.querySelector("#autofillNote");
 const roundStatus = document.querySelector("#roundStatus");
@@ -64,17 +66,28 @@ const staffNames = [
 
 function applyNameFromLink() {
   const params = new URLSearchParams(window.location.search);
+  const evaluatorFromLink = params.get("evaluator") || params.get("auditor");
   const nameFromLink = params.get("name") || params.get("staff");
 
-  if (!nameFromLink) return;
+  if (evaluatorFromLink) {
+    evaluatorNameInput.value = evaluatorFromLink.trim();
+    evaluatorNameInput.readOnly = true;
+    evaluatorNameInput.classList.add("is-autofilled");
+    evaluatorAutofillNote.classList.add("show");
+  }
 
-  fullNameInput.value = nameFromLink.trim();
-  fullNameInput.readOnly = true;
-  fullNameInput.classList.add("is-autofilled");
-  autofillNote.classList.add("show");
-  backButton.setAttribute("aria-label", "กลับไปเลือกรายชื่อ");
-  backButton.dataset.staffBack = "true";
-  refreshAssessmentStatus(nameFromLink.trim());
+  if (nameFromLink) {
+    fullNameInput.value = nameFromLink.trim();
+    fullNameInput.readOnly = true;
+    fullNameInput.classList.add("is-autofilled");
+    autofillNote.classList.add("show");
+    refreshAssessmentStatus(nameFromLink.trim());
+  }
+
+  if (evaluatorFromLink || nameFromLink) {
+    backButton.setAttribute("aria-label", "กลับไปเลือกรายชื่อ");
+    backButton.dataset.staffBack = "true";
+  }
 }
 
 function createMomentQuestion(momentNumber) {
@@ -268,7 +281,8 @@ function buildSummary() {
 
   return `
     <h3>บันทึกคำตอบเรียบร้อย</h3>
-    <p>ชื่อ - นามสกุล: ${form.elements.fullName.value.trim()}</p>
+    <p>ผู้ประเมิน: ${form.elements.evaluatorName.value.trim()}</p>
+    <p>ผู้ถูกประเมิน: ${form.elements.fullName.value.trim()}</p>
     <p>ประเมินครั้งที่: ${savedRound}${savedPeriod ? ` (${savedPeriod})` : ""}</p>
     ${momentAnswers}
     ${sendStatus ? `<p class="send-status">${sendStatus}</p>` : ""}
@@ -276,6 +290,7 @@ function buildSummary() {
 }
 
 function buildSubmissionPayload() {
+  const evaluatorName = form.elements.evaluatorName.value.trim();
   const fullName = form.elements.fullName.value.trim();
   const moments = Array.from({ length: 5 }, (_, index) => {
     const momentNumber = index + 1;
@@ -296,6 +311,7 @@ function buildSubmissionPayload() {
     id: activeSubmissionId,
     source: "hand-washing-form",
     submittedAt: new Date().toISOString(),
+    evaluator: evaluatorName,
     name: fullName,
     moments,
     summary: {
@@ -436,6 +452,8 @@ form.addEventListener("submit", async (event) => {
 });
 
 form.addEventListener("reset", () => {
+  const shouldRestoreLinkNames = fullNameInput.readOnly || evaluatorNameInput.readOnly;
+
   setTimeout(() => {
     form.querySelectorAll(".invalid").forEach((card) => card.classList.remove("invalid"));
     resultCard.classList.remove("show");
@@ -446,9 +464,14 @@ form.addEventListener("reset", () => {
     activeSubmissionId = createSubmissionId();
     isSubmitting = false;
     hasSubmittedSuccessfully = false;
-    if (!fullNameInput.readOnly) {
+
+    if (shouldRestoreLinkNames) {
+      applyNameFromLink();
+    } else {
       updateRoundStatus(null);
-    } else if (!currentAssessmentStatus?.complete) {
+    }
+
+    if (!currentAssessmentStatus?.complete) {
       setSubmitDisabled(false);
     }
   });
