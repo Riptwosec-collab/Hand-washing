@@ -59,6 +59,7 @@ function doPost(e) {
     const payload = JSON.parse(e.postData.contents);
     const submission = normalizeSubmission(payload);
     const sheet = getRawSheet();
+    ensureRawDataSchema(sheet);
 
     if (isDuplicateSubmission(sheet, submission.id)) {
       return jsonOutput({
@@ -133,6 +134,7 @@ function doGet(e) {
   if (params.action === "status" && params.name) {
     const period = getServerPeriod();
     const sheet = getRawSheet();
+    ensureRawDataSchema(sheet);
     const nextRound = getNextRound(sheet, params.name, period.month, period.year);
     return jsonOutput({
       ok: true,
@@ -285,7 +287,7 @@ function showResetPersonPrompt() {
 
 function normalizeSubmission(payload) {
   const evaluator = String(payload.evaluator || payload.evaluatorName || "").trim();
-  const name = String(payload.name || "").trim();
+  const name = String(payload.assessedName || payload.name || payload.staff || "").trim();
   const moments = Array.isArray(payload.moments) ? payload.moments : [];
   const submittedAt = new Date();
   const period = getServerPeriod(submittedAt);
@@ -316,6 +318,30 @@ function getServerPeriod(dateValue) {
 
 function getRawSheet() {
   return SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(RAW_SHEET_NAME);
+}
+
+function ensureRawDataSchema(sheet) {
+  const headers = [
+    "ผู้ถูกประเมิน",
+    "วันที่ส่ง",
+    "ครั้งที่ประเมิน",
+    "เดือน",
+    "ปี",
+    "Moment 1",
+    "Moment 2",
+    "Moment 3",
+    "Moment 4",
+    "Moment 5",
+    "น้ำสบู่",
+    "Alcohol",
+    "ไม่ล้างมือ",
+    "ครบ",
+    "ไม่ครบ",
+    "Payload ID",
+    "ผู้ประเมิน",
+  ];
+
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
 }
 
 function getNextRound(sheet, name, month, year) {

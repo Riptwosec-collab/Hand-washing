@@ -312,7 +312,9 @@ function buildSubmissionPayload() {
     source: "hand-washing-form",
     submittedAt: new Date().toISOString(),
     evaluator: evaluatorName,
+    evaluatorName,
     name: fullName,
+    assessedName: fullName,
     moments,
     summary: {
       momentCompliance: moments.map((item) => ({
