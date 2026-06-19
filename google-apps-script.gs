@@ -1,6 +1,7 @@
 const SPREADSHEET_ID = "1EqkZXESlWdKzPfCg77cIXvYHLlktRUxGz9w2sk1NjiM";
 const RAW_SHEET_NAME = "RawData";
 const MAX_ROUNDS_PER_MONTH = 4;
+const SCRIPT_VERSION = "2026-06-19-evaluator-v2";
 const MONTH_SHEET_NAMES = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 
 const STAFF_NAMES = [
@@ -64,6 +65,7 @@ function doPost(e) {
     if (isDuplicateSubmission(sheet, submission.id)) {
       return jsonOutput({
         ok: true,
+        version: SCRIPT_VERSION,
         duplicate: true,
         message: "บันทึกนี้เคยถูกส่งแล้ว ระบบไม่บันทึกซ้ำ",
         round: submission.round,
@@ -116,6 +118,7 @@ function doPost(e) {
 
     return jsonOutput({
       ok: true,
+      version: SCRIPT_VERSION,
       id: submission.id,
       round: nextRound,
       month: submission.month,
@@ -138,6 +141,7 @@ function doGet(e) {
     const nextRound = getNextRound(sheet, params.name, period.month, period.year);
     return jsonOutput({
       ok: true,
+      version: SCRIPT_VERSION,
       name: params.name,
       month: period.month,
       year: period.year,
@@ -147,7 +151,7 @@ function doGet(e) {
     });
   }
 
-  return jsonOutput({ ok: true, message: "Hand washing sheet endpoint is ready." });
+  return jsonOutput({ ok: true, version: SCRIPT_VERSION, message: "Hand washing sheet endpoint is ready." });
 }
 
 function showResetPersonDialog() {
